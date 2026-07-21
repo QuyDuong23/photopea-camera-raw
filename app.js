@@ -29,6 +29,24 @@ const groups = Object.fromEntries(['light','color','effects','detail','optics','
 const hslBandColors = ['#ff4d4f','#ff8a1f','#ffd43b','#52c41a','#2dd4bf','#3b82f6','#8b5cf6','#ec4899'];
 const hslNames = ['Reds','Oranges','Yellows','Greens','Aquas','Blues','Purples','Magentas'];
 const getMixerGradient = i => `linear-gradient(90deg, ${hslBandColors[(i+7)%8]} 0%, ${hslBandColors[i]} 45%, ${hslBandColors[i]} 55%, ${hslBandColors[(i+1)%8]} 100%)`;
+const sliderVisuals = {
+  temperature:{gradient:'linear-gradient(90deg,#6f63ff 0%, #7cc7ff 28%, #d5d5d5 50%, #ffe27a 74%, #ffb547 100%)', accent:'#d5d5d5'},
+  tint:{gradient:'linear-gradient(90deg,#41b96b 0%, #95d4ac 20%, #d5d5d5 50%, #e08cff 78%, #b14eff 100%)', accent:'#d58fff'},
+  vibrance:{gradient:'linear-gradient(90deg,#8a8a8a 0%, #7ed2ff 24%, #72d96d 42%, #ffd257 66%, #ff6e6e 100%)', accent:'#7ed2ff'},
+  saturation:{gradient:'linear-gradient(90deg,#8a8a8a 0%, #6dc8ff 20%, #64df6a 42%, #ffe164 64%, #ff6fa9 82%, #ff6666 100%)', accent:'#ffd257'},
+  redHue:{gradient:'linear-gradient(90deg,#ff66b4 0%, #ff4d4f 45%, #ff8a1f 100%)', accent:'#ff5b67'},
+  redSat:{gradient:'linear-gradient(90deg,#7a5a5a 0%, #ff4d4f 100%)', accent:'#ff5b67'},
+  greenHue:{gradient:'linear-gradient(90deg,#ffd43b 0%, #52c41a 45%, #2dd4bf 100%)', accent:'#61d52c'},
+  greenSat:{gradient:'linear-gradient(90deg,#5f7263 0%, #52c41a 100%)', accent:'#61d52c'},
+  blueHue:{gradient:'linear-gradient(90deg,#2dd4bf 0%, #3b82f6 45%, #8b5cf6 100%)', accent:'#5d99ff'},
+  blueSat:{gradient:'linear-gradient(90deg,#5a6882 0%, #3b82f6 100%)', accent:'#5d99ff'},
+  gradeShadowHue:{gradient:'linear-gradient(90deg,#ff4d4f 0%, #ff8a1f 16%, #ffd43b 32%, #52c41a 48%, #2dd4bf 64%, #3b82f6 80%, #8b5cf6 90%, #ec4899 100%)', accent:'#8fc8ff'},
+  gradeMidHue:{gradient:'linear-gradient(90deg,#ff4d4f 0%, #ff8a1f 16%, #ffd43b 32%, #52c41a 48%, #2dd4bf 64%, #3b82f6 80%, #8b5cf6 90%, #ec4899 100%)', accent:'#8fc8ff'},
+  gradeHighHue:{gradient:'linear-gradient(90deg,#ff4d4f 0%, #ff8a1f 16%, #ffd43b 32%, #52c41a 48%, #2dd4bf 64%, #3b82f6 80%, #8b5cf6 90%, #ec4899 100%)', accent:'#8fc8ff'},
+  gradeShadowSat:{gradient:'linear-gradient(90deg,#6e6e6e 0%, #3b82f6 100%)', accent:'#6ea8ff'},
+  gradeMidSat:{gradient:'linear-gradient(90deg,#6e6e6e 0%, #3b82f6 100%)', accent:'#6ea8ff'},
+  gradeHighSat:{gradient:'linear-gradient(90deg,#6e6e6e 0%, #3b82f6 100%)', accent:'#6ea8ff'}
+};
 const defaults = Object.fromEntries(Object.keys(defs).map(k=>[k,0]));
 defaults.sharpening=0; defaults.gradeBlending=50;
 defaults.curve=[0,.25,.5,.75,1];
@@ -42,14 +60,22 @@ const isPopup=new URLSearchParams(location.search).has('popup'); let popupRef=nu
 const canvas=$('#preview'), wrap=$('#canvasWrap'), loading=$('#loading'), statusEl=$('#status'), docInfo=$('#docInfo');
 
 function makeSlider(key, parent, valueGetter=()=>params[key], valueSetter=v=>params[key]=v){
-  const d=defs[key]; const row=document.createElement('div'); row.className='control-row';
-  row.innerHTML=`<label for="r_${key}">${d.label}</label><input id="r_${key}" type="range" min="${d.min}" max="${d.max}" step="${d.step}"><input type="number" min="${d.min}" max="${d.max}" step="${d.step}">`;
-  const range=$('input[type=range]',row), num=$('input[type=number]',row);
+  const d=defs[key]; const row=document.createElement('div'); row.className='control-row'; row.dataset.key=key;
+  const visual=sliderVisuals[key];
+  row.innerHTML=`<label for="r_${key}">${d.label}</label><div class="range-shell${visual?' has-visual':''}">${visual?`<div class="color-band"></div>`:''}<input id="r_${key}" type="range" min="${d.min}" max="${d.max}" step="${d.step}"></div><input type="number" min="${d.min}" max="${d.max}" step="${d.step}">`;
+  const shell=$('.range-shell',row), range=$('input[type=range]',row), num=$('input[type=number]',row);
+  if(visual){
+    row.classList.add('colorized-row');
+    row.style.setProperty('--slider-grad', visual.gradient);
+    row.style.setProperty('--slider-accent', visual.accent || '#a7a7a7');
+    range.style.accentColor = visual.accent || '#a7a7a7';
+    num.style.borderColor = (visual.accent || '#a7a7a7') + '55';
+  }
   const sync=v=>{v=clamp(Number(v)||0,d.min,d.max);valueSetter(v);range.value=v;num.value=(d.step<1?v.toFixed(2):Math.round(v));queueRender();};
   range.value=valueGetter(); num.value=valueGetter();
   range.addEventListener('input',e=>sync(e.target.value)); num.addEventListener('input',e=>sync(e.target.value));
   range.addEventListener('change',commitHistory); num.addEventListener('change',commitHistory);
-  parent.appendChild(row); return {row,range,num,sync};
+  parent.appendChild(row); return {row,range,num,sync,shell};
 }
 function buildControls(){
   for(const k of groups.light) makeSlider(k,$('#lightControls'));
@@ -101,12 +127,22 @@ function buildHsl(){
   });
 }
 function refreshControls(){
-  Object.keys(defs).forEach(k=>{const r=$(`#r_${k}`);if(r){r.value=params[k];const n=r.nextElementSibling;n.value=defs[k].step<1?params[k].toFixed(2):Math.round(params[k]);}});
+  Object.keys(defs).forEach(k=>{const r=$(`#r_${k}`);if(r){r.value=params[k];const n=r.closest('.control-row')?.querySelector('input[type=number]'); if(n) n.value=defs[k].step<1?params[k].toFixed(2):Math.round(params[k]);}});
   buildHsl(); drawCurve(); updateGradeSwatches(); queueRender(); updateUndoButtons();
 }
 function updateGradeSwatches(){
   const vals=[['gradeShadowHue','gradeShadowSat'],['gradeMidHue','gradeMidSat'],['gradeHighHue','gradeHighSat']];
   $$('.grade-swatch').forEach((sw,i)=>{const [h,s]=vals[i];sw.style.background=`hsl(${params[h]} ${params[s]}% 50%)`;});
+  vals.forEach(([h,s])=>{
+    const satRow=$(`#r_${s}`)?.closest('.control-row');
+    if(satRow){
+      const hue=params[h];
+      satRow.style.setProperty('--slider-grad', `linear-gradient(90deg,#6e6e6e 0%, hsl(${hue} 85% 55%) 100%)`);
+      satRow.style.setProperty('--slider-accent', `hsl(${hue} 85% 70%)`);
+      const range=satRow.querySelector('input[type=range]');
+      if(range) range.style.accentColor=`hsl(${hue} 85% 70%)`;
+    }
+  });
 }
 
 function commitHistory(){
@@ -138,6 +174,8 @@ float cd(float a,float b){float d=abs(a-b);return min(d,1.0-d);}
 float curveMap(float x){float seg=clamp(x*4.0,0.0,3.9999);int i=int(floor(seg));float t=fract(seg);float a=uCurve[i],b=uCurve[i+1];return mix(a,b,t);}
 vec3 toneCurve(vec3 c){return vec3(curveMap(c.r),curveMap(c.g),curveMap(c.b));}
 vec3 toneAdjust(vec3 c,float amount,float mask){float a=amount*mask;return a>=0.0?mix(c,vec3(1.0),a):mix(c,vec3(0.0),-a);}
+float rgbSat(vec3 c){float mx=max(c.r,max(c.g,c.b)), mn=min(c.r,min(c.g,c.b)); return mx-mn;}
+vec3 applyChroma(vec3 rgb, float scale){float y=lum(rgb); return vec3(y) + (rgb-vec3(y))*scale;}
 void main(){
   vec2 p=vUv-.5; float r2=dot(p,p); vec2 uv=.5+p*(1.0+uDistortion*r2*.9);
   vec2 ca=p*uChromatic*.012; vec3 center=vec3(texture(uTex,uv+ca).r,texture(uTex,uv).g,texture(uTex,uv-ca).b);
@@ -151,24 +189,62 @@ void main(){
   c=(c-.5)*(1.0+uContrast*.85)+.5; y=lum(c);
   c=toneAdjust(c,uShadows*.65,1.0-smoothstep(.08,.62,y)); c=toneAdjust(c,uHighlights*.55,smoothstep(.38,.95,y));
   y=lum(c);c=toneAdjust(c,uBlacks*.45,1.0-smoothstep(.02,.38,y));c=toneAdjust(c,uWhites*.45,smoothstep(.62,.98,y));
-  c=(c-.5)*(1.0+uDehaze*.45)+.5; vec3 hsl=rgb2hsl(clamp(c,0.0,1.0));
-  float centers[8]=float[8](0.0,.08333,.16667,.33333,.5,.66667,.77778,.91667);float dh=0.0,ds=0.0,dl=0.0,ws=0.0;
-  float satMask=smoothstep(0.05,0.22,hsl.y); float lumMask=1.0-smoothstep(0.88,1.0,abs(hsl.z-0.5)*2.0);
+  c=(c-.5)*(1.0+uDehaze*.45)+.5;
+
+  // Color Mixer v2.1.4: use a lightly spatial-smoothed selector, normalize only
+  // the hue kernels, and apply chroma masks after normalization. This avoids
+  // amplifying tiny hue noise in low-saturation / textured pixels into spots.
+  vec3 workRgb=clamp(c,0.0,1.0);
+  vec3 selectorRgb=clamp(mix(workRgb,avg,0.28),0.0,1.0);
+  vec3 hsl=rgb2hsl(workRgb);
+  vec3 selectorHsl=rgb2hsl(selectorRgb);
+  float centers[8]=float[8](0.0,.08333,.16667,.33333,.5,.66667,.77778,.91667);
+  float dh=0.0,ds=0.0,dl=0.0,ws=0.0;
   for(int i=0;i<8;i++){
-    float dist=cd(hsl.x,centers[i]);
-    float width=mix(0.085,0.14,1.0-hsl.y*.55);
-    float w=exp(-pow(dist/width,2.0)*2.4)*satMask*lumMask;
-    dh+=uHslHue[i]*w; ds+=uHslSat[i]*w; dl+=uHslLum[i]*w; ws+=w;
+    float dist=cd(selectorHsl.x,centers[i]);
+    float w=1.0-smoothstep(0.055,0.185,dist);
+    w=w*w*(3.0-2.0*w);
+    dh+=uHslHue[i]*w;
+    ds+=uHslSat[i]*w;
+    dl+=uHslLum[i]*w;
+    ws+=w;
   }
   if(ws>0.0001){
-    float hueAdj=dh/ws;
-    float satAdj=ds/ws;
-    float lumAdj=dl/ws;
-    hsl.x=fract(hsl.x+hueAdj*(0.075+0.03*hsl.y)+1.0);
-    hsl.y=clamp(hsl.y + satAdj*(0.22+0.45*hsl.y),0.0,1.0);
-    hsl.z=clamp(hsl.z + lumAdj*(0.18+0.22*(1.0-abs(hsl.z-0.5)*2.0)),0.0,1.0);
+    float chromaMask=smoothstep(0.075,0.30,selectorHsl.y);
+    float shadowMask=smoothstep(0.018,0.11,selectorHsl.z);
+    float highlightMask=1.0-smoothstep(0.90,0.985,selectorHsl.z);
+    float mixerMask=chromaMask*shadowMask*highlightMask;
+    float hueAdj=(dh/ws)*mixerMask;
+    float satAdj=(ds/ws)*mixerMask;
+    float lumAdj=(dl/ws)*mixerMask;
+
+    // Hue is rotated only where chroma is reliable.
+    hsl.x=fract(hsl.x+hueAdj*(0.070+0.025*hsl.y)+1.0);
+    // Luminance keeps a soft roll-off around black and white.
+    hsl.z=clamp(hsl.z+lumAdj*(0.16+0.20*(1.0-abs(hsl.z-0.5)*2.0)),0.0,1.0);
+
+    // Selective saturation is applied as smooth RGB chroma scaling instead of
+    // directly editing HSL saturation. At -100 it reaches neutral gray without
+    // unstable hue flips or salt-and-pepper color remnants.
+    vec3 mixerRgb=hsl2rgb(hsl);
+    float mixerY=lum(mixerRgb);
+    float satScale=satAdj<0.0 ? max(0.0,1.0+satAdj) : 1.0+satAdj*1.35;
+    c=vec3(mixerY)+(mixerRgb-vec3(mixerY))*satScale;
+  }else{
+    c=workRgb;
   }
-  hsl.y=clamp(hsl.y*(1.0+uSaturation)+uVibrance*(1.0-hsl.y)*.55,0.0,1.0); c=hsl2rgb(hsl); c=toneCurve(clamp(c,0.0,1.0)); y=lum(c);
+
+  c=clamp(c,0.0,1.0);
+  c=applyChroma(c, max(0.0, 1.0 + uSaturation));
+  c=clamp(c,0.0,1.0);
+  float vibSat=rgbSat(c);
+  float vibY=lum(c);
+  float vibMask=(1.0-smoothstep(0.10,0.78,vibSat))*smoothstep(0.03,0.18,vibY)*(1.0-smoothstep(0.82,0.98,vibY));
+  float skinMask=smoothstep(0.015,0.22,c.r-c.b)*smoothstep(-0.02,0.12,c.g-c.b);
+  float vibAmt=uVibrance*vibMask*mix(1.0,0.72,skinMask);
+  float vibScale=vibAmt>=0.0 ? 1.0 + vibAmt*1.05 : max(0.0,1.0 + vibAmt*0.85);
+  c=applyChroma(c, vibScale);
+  c=toneCurve(clamp(c,0.0,1.0)); y=lum(c);
   float bal=uGradeBalance*.25;float sw=1.0-smoothstep(.15+bal,.58+bal,y),hw=smoothstep(.42+bal,.88+bal,y),mw=clamp(1.0-sw-hw,0.0,1.0);float blend=.45+.55*uGradeBlend;
   c+=(hsvColor(uGradeShadowHue)-.5)*uGradeShadowSat*sw*.55*blend;c+=(hsvColor(uGradeMidHue)-.5)*uGradeMidSat*mw*.48*blend;c+=(hsvColor(uGradeHighHue)-.5)*uGradeHighSat*hw*.5*blend;
   float rr=c.r,gg=c.g,bb=c.b;c.r=rr*(1.0+uRedSat*.22)+gg*uRedHue*.09-bb*uRedHue*.06;c.g=gg*(1.0+uGreenSat*.22)+bb*uGreenHue*.09-rr*uGreenHue*.06;c.b=bb*(1.0+uBlueSat*.22)+rr*uBlueHue*.09-gg*uBlueHue*.06;
@@ -273,11 +349,21 @@ function wireUI(){
   $('#resetCurve').addEventListener('click',()=>{params.curve=deepCopy(defaults.curve);drawCurve();queueRender();commitHistory()});
   $('#btnPhotopea').addEventListener('click',requestFromPhotopea);$('#btnApply').addEventListener('click',applyToPhotopea);
   const windowBtn=$('#btnWindow');
-  if(windowBtn) windowBtn.addEventListener('click',()=>{
-    if(isPopup){window.close();return;}
-    popupRef=window.open(location.href.split('?')[0]+'?popup=1','CameraRawStudio','popup=yes,width=1400,height=900,resizable=yes,scrollbars=yes');
-    if(!popupRef)setStatus('Trình duyệt đã chặn cửa sổ. Hãy cho phép pop-up cho trang plugin.',true);
-    else setStatus('Đã mở Camera Raw Studio trong cửa sổ lớn. Giữ panel plugin này mở để kết nối với Photopea.');
+  if(windowBtn) windowBtn.addEventListener('click',e=>{
+    if(isPopup){e.preventDefault();window.close();return;}
+    e.preventDefault();
+    const popupUrl=new URL(location.href);
+    popupUrl.searchParams.set('popup','1');
+    popupUrl.searchParams.set('v','2.1.4');
+    popupRef=window.open(popupUrl.href,'CameraRawStudio','popup=yes,width=1400,height=900,resizable=yes,scrollbars=yes');
+    if(!popupRef){
+      setStatus('Trình duyệt đã chặn pop-up. Đang thử mở trong tab mới…',true);
+      popupRef=window.open(popupUrl.href,'_blank');
+    }
+    if(popupRef){
+      try{popupRef.focus();}catch{}
+      setStatus('Đã mở Camera Raw Studio trong cửa sổ lớn. Giữ panel plugin này mở để kết nối với Photopea.');
+    }else setStatus('Không thể mở cửa sổ. Hãy cho phép pop-up cho Photopea rồi thử lại.',true);
   });
   $('#btnDownload').addEventListener('click',downloadPNG);
   $('#fileInput').addEventListener('change',e=>{const f=e.target.files?.[0];if(f){sourceMeta=null;loadBitmapFromBlob(f,f.name,false)}e.target.value=''});
@@ -287,4 +373,4 @@ function wireUI(){
   window.addEventListener('resize',debounce(()=>render(),120));
 }
 
-try{initGL();buildControls();wireUI();const windowBtn=$('#btnWindow');if(isPopup&&windowBtn){windowBtn.textContent='✕ Đóng cửa sổ';windowBtn.title='Đóng cửa sổ Camera Raw Studio';}drawCurve();updateUndoButtons();setStatus(`Sẵn sàng • WebGL2 • giới hạn ${maxTextureSize}px`);}catch(e){setStatus(e.message,true);console.error(e);alert(e.message)}
+try{initGL();buildControls();wireUI();const windowBtn=$('#btnWindow');if(isPopup&&windowBtn){windowBtn.innerHTML='<span class="window-icon">✕</span><span class="window-copy"><strong>Đóng cửa sổ lớn</strong><small>Quay lại panel Photopea</small></span>';windowBtn.title='Đóng cửa sổ Camera Raw Studio';}drawCurve();updateUndoButtons();setStatus(`Sẵn sàng • WebGL2 • v2.1.4 • giới hạn ${maxTextureSize}px`);}catch(e){setStatus(e.message,true);console.error(e);alert(e.message)}

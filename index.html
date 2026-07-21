@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="color-scheme" content="dark" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Camera Raw Studio for Photopea</title>
   <meta name="description" content="Camera Raw Studio for Photopea by Quý Dương" />
   <meta property="og:type" content="website" />
@@ -16,7 +19,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:image" content="https://quyduong23.github.io/photopea-camera-raw/thumbnail.png" />
   <link rel="image_src" href="https://quyduong23.github.io/photopea-camera-raw/thumbnail.png" />
-  <link rel="stylesheet" href="styles.css?v=2.1.1" />
+  <link rel="stylesheet" href="styles.css?v=2.1.4" />
 </head>
 <body>
   <div id="app">
@@ -28,11 +31,18 @@
       <div class="toolbar">
         <button id="btnPhotopea" class="primary" title="Lấy ảnh đang mở trong Photopea">Mở từ Photopea</button>
         <label class="button" title="Mở ảnh từ máy tính">Mở ảnh<input id="fileInput" type="file" accept="image/*" hidden /></label>
-        <button id="btnWindow" class="window-btn" title="Mở Camera Raw Studio trong cửa sổ lớn">⛶ Cửa sổ lớn</button>
         <button id="btnBefore" title="Giữ chuột để xem ảnh gốc">Trước / Sau</button>
         <button id="btnReset" title="Đặt lại toàn bộ thông số">Đặt lại</button>
       </div>
     </header>
+
+    <div class="window-launch-row" id="windowLaunchRow">
+      <a id="btnWindow" class="button window-btn" href="./?popup=1&amp;v=2.1.4" target="CameraRawStudio" title="Mở Camera Raw Studio trong cửa sổ lớn">
+        <span class="window-icon">⛶</span>
+        <span class="window-copy"><strong>Mở cửa sổ lớn</strong><small>Không gian chỉnh sửa đầy đủ 1400 × 900</small></span>
+      </a>
+      <span class="version-badge">v2.1.4</span>
+    </div>
 
     <main class="workspace">
       <section class="preview-pane">
@@ -107,7 +117,7 @@
               <button class="subtab" data-hsl="lum">Luminance</button>
             </div>
             <div id="mixerLegend" class="mixer-legend"></div>
-            <p class="hint compact">Mỗi dải màu có chip nhận diện và thanh gradient để bạn dễ thấy vùng màu đang chỉnh. Thuật toán HSL đã được làm mượt để chuyển sắc tự nhiên hơn giữa các dải màu lân cận.</p>
+            <p class="hint compact">Mỗi dải màu có chip nhận diện và thanh gradient để bạn dễ thấy vùng màu đang chỉnh. Color Mixer v2.1.4 dùng vùng chọn màu làm mượt và xử lý saturation theo chroma RGB để loại bỏ điểm màu, mảng xám gắt và ranh giới bị vỡ.</p>
             <div id="hslControls" class="slider-list"></div>
           </section>
 
@@ -145,6 +155,6 @@
       </aside>
     </main>
   </div>
-  <script src="app.js?v=2.1.1"></script>
+  <script src="app.js?v=2.1.4"></script>
 </body>
 </html>

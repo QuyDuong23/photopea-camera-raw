@@ -45,3 +45,9 @@ Plugin chỉnh ảnh kiểu Camera Raw chạy trực tiếp trong trình duyệt
 ## Lưu ý kỹ thuật
 
 Đây là engine WebGL độc lập mô phỏng workflow Camera Raw. Nó không chứa mã nguồn Adobe Camera Raw, không giải mã RAW máy ảnh theo profile Adobe và không thể tạo Smart Filter Camera Raw gốc. Ảnh từ Photopea được gửi sang plugin dưới dạng PNG đã render; kết quả được đưa trở lại dưới dạng một layer pixel mới.
+
+
+## v2.1.3
+- Sửa Color Mixer Saturation bị điểm màu / mảng xám gắt.
+- Dùng selector màu làm mượt theo không gian và chroma RGB scaling.
+- Giữ nguyên nút Mở cửa sổ lớn.
