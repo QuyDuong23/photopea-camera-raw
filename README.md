@@ -38,8 +38,8 @@ Plugin chỉnh ảnh kiểu Camera Raw chạy trực tiếp trong trình duyệt
 
 1. Mở ảnh / PSD trong Photopea.
 2. Mở plugin Camera Raw Studio ở thanh bên phải.
-3. Có thể bấm **Cửa sổ lớn** để dùng giao diện rộng giống Camera Raw. Giữ panel plugin mở để làm cầu nối với Photopea.
-4. Bấm **Mở từ Photopea** rồi chỉnh thông số.
+3. Bấm **Mở từ Photopea**.
+4. Chỉnh thông số.
 5. Bấm **Áp dụng vào Photopea** để tạo layer mới.
 
 ## Lưu ý kỹ thuật
