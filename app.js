@@ -272,7 +272,14 @@ function wireUI(){
   $$('[data-reset-group]').forEach(b=>b.addEventListener('click',()=>resetGroup(b.dataset.resetGroup)));
   $('#resetCurve').addEventListener('click',()=>{params.curve=deepCopy(defaults.curve);drawCurve();queueRender();commitHistory()});
   $('#btnPhotopea').addEventListener('click',requestFromPhotopea);$('#btnApply').addEventListener('click',applyToPhotopea);
-  $('#btnWindow').addEventListener('click',()=>{if(isPopup){window.close();return;}popupRef=window.open(location.href.split('?')[0]+'?popup=1','CameraRawStudio','popup=yes,width=1400,height=900,resizable=yes,scrollbars=yes');if(!popupRef)setStatus('Trình duyệt đã chặn cửa sổ. Hãy cho phép pop-up cho trang plugin.',true);});$('#btnDownload').addEventListener('click',downloadPNG);
+  const windowBtn=$('#btnWindow');
+  if(windowBtn) windowBtn.addEventListener('click',()=>{
+    if(isPopup){window.close();return;}
+    popupRef=window.open(location.href.split('?')[0]+'?popup=1','CameraRawStudio','popup=yes,width=1400,height=900,resizable=yes,scrollbars=yes');
+    if(!popupRef)setStatus('Trình duyệt đã chặn cửa sổ. Hãy cho phép pop-up cho trang plugin.',true);
+    else setStatus('Đã mở Camera Raw Studio trong cửa sổ lớn. Giữ panel plugin này mở để kết nối với Photopea.');
+  });
+  $('#btnDownload').addEventListener('click',downloadPNG);
   $('#fileInput').addEventListener('change',e=>{const f=e.target.files?.[0];if(f){sourceMeta=null;loadBitmapFromBlob(f,f.name,false)}e.target.value=''});
   $('#btnReset').addEventListener('click',()=>{params=deepCopy(defaults);refreshControls();commitHistory()});$('#btnUndo').addEventListener('click',undo);$('#btnRedo').addEventListener('click',redo);
   $('#presetSelect').addEventListener('change',e=>applyPreset(e.target.value));$('#btnFit').addEventListener('click',()=>{previewScaleMode='fit';render()});$('#btn100').addEventListener('click',()=>{previewScaleMode='100';render()});
@@ -280,4 +287,4 @@ function wireUI(){
   window.addEventListener('resize',debounce(()=>render(),120));
 }
 
-try{initGL();buildControls();wireUI();if(isPopup)$('#btnWindow').textContent='Đóng cửa sổ';drawCurve();updateUndoButtons();setStatus(`Sẵn sàng • WebGL2 • giới hạn ${maxTextureSize}px`);}catch(e){setStatus(e.message,true);alert(e.message)}
+try{initGL();buildControls();wireUI();const windowBtn=$('#btnWindow');if(isPopup&&windowBtn){windowBtn.textContent='✕ Đóng cửa sổ';windowBtn.title='Đóng cửa sổ Camera Raw Studio';}drawCurve();updateUndoButtons();setStatus(`Sẵn sàng • WebGL2 • giới hạn ${maxTextureSize}px`);}catch(e){setStatus(e.message,true);console.error(e);alert(e.message)}
